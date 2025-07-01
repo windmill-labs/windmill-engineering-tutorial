@@ -29,6 +29,8 @@ date: "2025-07-01"
 
 ![Windmill](image.png)
 
+---
+
 # What We're Building Today
 
 - 🎯 State Machine for Jobs & Workflows
