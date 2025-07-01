@@ -3,5 +3,5 @@
 ## Generate HTML
 
 ```bash
-marp -w presentation.md --html  -o presentation.html
+marp -w presentation.md --html  -o site/index.html
 ```
