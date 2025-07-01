@@ -41,6 +41,9 @@ Bonus:
 
 - 📡 Live Log Streaming
 
+A lot of systems are workflow engines in disguise, the pattern can be applied
+everywhere
+
 ---
 
 # Part 1: The Foundation
@@ -369,20 +372,6 @@ for log in incoming_logs {
 ```
 
 **Result**: 10x throughput improvement! 🚀
-
----
-
-# Part 5: Putting It All Together
-
-```rust
-pub struct MiniWindmill {
-    store: PersistentJobStore,
-    log_streamer: Arc<LogStreamer>,
-    zombie_detector: ZombieJobDetector,
-    error_recovery: ErrorRecoveryManager,
-    worker_pool: WorkerPool,
-}
-```
 
 ---
 
