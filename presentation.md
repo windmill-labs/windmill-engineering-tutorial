@@ -27,7 +27,7 @@ date: "2025-07-01"
 - 30k+ users
 - 10k+ jobs executed every second
 
-![Windmill](image.png)
+![Windmill](./image.png)
 
 ---
 
