@@ -298,6 +298,38 @@ instance. For more, you shard.
 
 ---
 
+```rust
+// When a job completes, push next workflow job
+async fn on_job_completed(job_id: Uuid) {
+    // Check if job is part of a workflow
+    if let Some(workflow_id) = get_workflow_for_job(job_id).await {
+        let workflow = get_workflow_status(workflow_id).await;
+
+        // Find current job index
+        let current_idx = workflow.jobs.iter()
+            .position(|&id| id == job_id)
+            .unwrap();
+
+        // Push next job if exists
+        if let Some(&next_job_id) = workflow.jobs.get(current_idx + 1) {
+            push_job_to_queue(next_job_id).await;
+        } else {
+            // No more jobs, workflow complete
+            update_workflow_status(workflow_id, WorkflowState::Completed).await;
+        }
+    }
+}
+
+// Worker main loop
+loop {
+    let job = pull_next_job().await;
+    execute_job(job).await;
+    on_job_completed(job.id).await;
+}
+```
+
+---
+
 # Part 3: Zombie Jobs/Workflows 🧟
 
 Oops, your worker crashed, or your network went down, or your computer exploded.
@@ -380,6 +412,7 @@ for log in incoming_logs {
 **Next Challenges**:
 
 - Branch one, branch all, for loop, while loop, approval/suspend steps
+- Background job completed processor, to increase pipelining
 - Sharding, fine grained error handling, observability, metrics, tracing, etc.
 
 ---

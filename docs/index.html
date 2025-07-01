@@ -261,13 +261,43 @@ status and push the next job. That's it</li>
 </ul>
 </section>
 </foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="15" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
+<pre is="marp-pre" data-auto-scaling="downscale-only"><code class="language-rust"><span class="hljs-comment">// When a job completes, push next workflow job</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">on_job_completed</span>(job_id: Uuid) {
+    <span class="hljs-comment">// Check if job is part of a workflow</span>
+    <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Some</span>(workflow_id) = <span class="hljs-title function_ invoke__">get_workflow_for_job</span>(job_id).<span class="hljs-keyword">await</span> {
+        <span class="hljs-keyword">let</span> <span class="hljs-variable">workflow</span> = <span class="hljs-title function_ invoke__">get_workflow_status</span>(workflow_id).<span class="hljs-keyword">await</span>;
+
+        <span class="hljs-comment">// Find current job index</span>
+        <span class="hljs-keyword">let</span> <span class="hljs-variable">current_idx</span> = workflow.jobs.<span class="hljs-title function_ invoke__">iter</span>()
+            .<span class="hljs-title function_ invoke__">position</span>(|&amp;id| id == job_id)
+            .<span class="hljs-title function_ invoke__">unwrap</span>();
+
+        <span class="hljs-comment">// Push next job if exists</span>
+        <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Some</span>(&amp;next_job_id) = workflow.jobs.<span class="hljs-title function_ invoke__">get</span>(current_idx + <span class="hljs-number">1</span>) {
+            <span class="hljs-title function_ invoke__">push_job_to_queue</span>(next_job_id).<span class="hljs-keyword">await</span>;
+        } <span class="hljs-keyword">else</span> {
+            <span class="hljs-comment">// No more jobs, workflow complete</span>
+            <span class="hljs-title function_ invoke__">update_workflow_status</span>(workflow_id, WorkflowState::Completed).<span class="hljs-keyword">await</span>;
+        }
+    }
+}
+
+<span class="hljs-comment">// Worker main loop</span>
+<span class="hljs-keyword">loop</span> {
+    <span class="hljs-keyword">let</span> <span class="hljs-variable">job</span> = <span class="hljs-title function_ invoke__">pull_next_job</span>().<span class="hljs-keyword">await</span>;
+    <span class="hljs-title function_ invoke__">execute_job</span>(job).<span class="hljs-keyword">await</span>;
+    <span class="hljs-title function_ invoke__">on_job_completed</span>(job.id).<span class="hljs-keyword">await</span>;
+}
+</code></pre>
+</section>
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="16" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
 <h1 id="part-3-zombie-jobsworkflows-%F0%9F%A7%9F">Part 3: Zombie Jobs/Workflows <img class="emoji" draggable="false" alt="🧟" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f9df.svg" data-marp-twemoji=""/></h1>
 <p>Oops, your worker crashed, or your network went down, or your computer exploded.</p>
 <p>What happens to your jobs?</p>
 <p>They are stuck in a running state, and will never complete.</p>
 <p>We need to detect this and recover them.</p>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="16" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="17" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
 <h1 id="heartbeat-based-detection">Heartbeat-Based Detection</h1>
 <p>Add a regular ping from worker, and detect when you expect progress and none is<br />
 happening</p>
@@ -288,20 +318,20 @@ happening</p>
 }
 </code></pre>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="17" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="18" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
 <h3 id="recover-zombie">Recover zombie</h3>
 <p>job or workflow is in recoverable state, e.g can be retried, sent to another<br />
 worker in the last known state.</p>
 <p>That's why FSM are so important, they allow us to recover from any state.</p>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="18" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="19" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
 <h1 id="part-4-live-log-streaming-%F0%9F%93%A1">Part 4: Live Log Streaming <img class="emoji" draggable="false" alt="📡" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f4e1.svg" data-marp-twemoji=""/></h1>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="19" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="20" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
 <p>Logs are streamed from the forked process, buffered and then sent to postgresql.<br />
 Once they reach a certain size, they are flushed to s3.</p>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="20" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="21" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
 <h1 id="performance-optimization">Performance Optimization</h1>
 <h2 id="log-batching-for-high-throughput">Log Batching for High Throughput</h2>
 <pre is="marp-pre" data-auto-scaling="downscale-only"><code class="language-rust"><span class="hljs-comment">// Instead of: 1000 individual inserts</span>
@@ -318,15 +348,16 @@ Once they reach a certain size, they are flushed to s3.</p>
 </code></pre>
 <p><strong>Result</strong>: 10x throughput improvement! <img class="emoji" draggable="false" alt="🚀" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f680.svg" data-marp-twemoji=""/></p>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="21" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="22" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
 <h1 id="scaling-beyond-mini-windmill">Scaling Beyond Mini-Windmill</h1>
 <p><strong>Next Challenges</strong>:</p>
 <ul>
 <li>Branch one, branch all, for loop, while loop, approval/suspend steps</li>
+<li>Background job completed processor, to increase pipelining</li>
 <li>Sharding, fine grained error handling, observability, metrics, tracing, etc.</li>
 </ul>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="22" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="23" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
 <h1 id="lessons-learned">Lessons Learned</h1>
 <blockquote>
 <p>&quot;Complexity is the enemy of reliability&quot;</p>
@@ -337,16 +368,16 @@ Once they reach a certain size, they are flushed to s3.</p>
 <li>Design for random failures from day one</li>
 </ul>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="23" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="24" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
 <h1 id="demo-time-%F0%9F%8E%AE">Demo Time! <img class="emoji" draggable="false" alt="🎮" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f3ae.svg" data-marp-twemoji=""/></h1>
 <p><a href="https://youtu.be/eLPGqUNJ2G8">https://youtu.be/eLPGqUNJ2G8</a></p>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="24" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="25" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
 <h1 id="questions-%F0%9F%A4%94">Questions? <img class="emoji" draggable="false" alt="🤔" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f914.svg" data-marp-twemoji=""/></h1>
 <h2 id="resources">Resources</h2>
 <p><a href="https://github.com/windmill-labs/windmill">https://github.com/windmill-labs/windmill</a></p>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="25" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="26" data-class="invert" data-theme="default" lang="en-US" class="invert" style="--class:invert;--theme:default;">
 <h1 id="thank-you-%F0%9F%99%8F">Thank You! <img class="emoji" draggable="false" alt="🙏" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f64f.svg" data-marp-twemoji=""/></h1>
 <h2 id="happy-building-%F0%9F%9A%80">Happy Building! <img class="emoji" draggable="false" alt="🚀" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f680.svg" data-marp-twemoji=""/></h2>
 </section>
